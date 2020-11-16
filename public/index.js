@@ -136,6 +136,7 @@ function sendTransaction(isAdding) {
   })
   .catch(err => {
     // fetch failed, so save in indexed db
+    console.log(err, "Im here in catch");
     saveRecord(transaction);
 
     // clear form
@@ -152,16 +153,22 @@ document.querySelector("#sub-btn").onclick = function() {
   sendTransaction(false);
 };
 
-function saveRecord(databaseName, storeName, method, object) {
+
+
+ function saveRecord(transaction) {
+  preventDefault();
+
+  console.log("made it into saveRecord");
+
   return new Promise((resolve, reject) => {
-    const request = window.indexedDB.open(databaseName, 1);
+    const request = window.indexedDB.open(transaction, 1);
     let db,
       tx,
       store;
 
     request.onupgradeneeded = function(e) {
       const db = request.result;
-      db.createObjectStore(storeName, { keyPath: "_id" });
+      db.createObjectStore("CoolStore", { keyPath: "_id" });
     };
 
     request.onerror = function(e) {
@@ -170,8 +177,8 @@ function saveRecord(databaseName, storeName, method, object) {
 
     request.onsuccess = function(e) {
       db = request.result;
-      tx = db.transaction(storeName, "readwrite");
-      store = tx.objectStore(storeName);
+      tx = db.transaction(transaction.name, "readwrite");
+      store = tx.objectStore(transaction.name);
 
       db.onerror = function(e) {
         console.log("error");
