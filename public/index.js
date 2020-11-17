@@ -157,8 +157,8 @@ document.querySelector("#sub-btn").onclick = function() {
 async function saveRecord(transaction) {
   console.log("Im here in saveRecord!");
   console.log(transactions);
-  console.log('new id is ', transactions._id.length +1);
-  transaction['_id'] = transactions[transactions.length]._id +1;
+  // var latestTrans = transactions.sort({$natural:-1});
+  // console.log(latestTrans);
   console.log(transaction);
 
   return new Promise((resolve, reject) => {
@@ -174,7 +174,7 @@ async function saveRecord(transaction) {
 
     request.onupgradeneeded = function(e) {
       const db = request.result;
-      db.createObjectStore(storeName, { keyPath: "_id"});
+      db.createObjectStore(storeName, {autoIncrement: true});
     };
 
     request.onerror = function(e) {
@@ -201,7 +201,6 @@ async function saveRecord(transaction) {
     };
   });
 }
-
 
 
 
