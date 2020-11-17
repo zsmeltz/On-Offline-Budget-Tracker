@@ -1,5 +1,10 @@
+// const { on } = require("../models/transaction");
 var transactions = [];
 let myChart;
+
+let online = false;
+
+
 
 fetch("/api/transaction")
   .then(response => {
@@ -8,7 +13,8 @@ fetch("/api/transaction")
   .then(data => {
     // save db data on global variable
     transactions = data;
-
+    
+    getRecord();
     populateTotal();
     populateTable();
     populateChart();
@@ -66,14 +72,14 @@ function populateChart() {
 
   myChart = new Chart(ctx, {
     type: 'line',
-      data: {
-        labels,
-        datasets: [{
-            label: "Total Over Time",
-            fill: true,
-            backgroundColor: "#6666ff",
-            data
-        }]
+    data: {
+      labels,
+      datasets: [{
+        label: "Total Over Time",
+        fill: true,
+        backgroundColor: "#6666ff",
+        data
+      }]
     }
   });
 }
@@ -111,7 +117,7 @@ function sendTransaction(isAdding) {
   populateChart();
   populateTable();
   populateTotal();
-  
+
   // also send to server
   fetch("/api/transaction", {
     method: "POST",
@@ -121,35 +127,35 @@ function sendTransaction(isAdding) {
       "Content-Type": "application/json"
     }
   })
-  .then(response => {    
-    return response.json();
-  })
-  .then(data => {
-    if (data.errors) {
-      errorEl.textContent = "Missing Information";
-    }
-    else {
+    .then(response => {
+      return response.json();
+    })
+    .then(data => {
+      if (data.errors) {
+        errorEl.textContent = "Missing Information";
+      }
+      else {
+        // clear form
+        nameEl.value = "";
+        amountEl.value = "";
+      }
+    })
+    .catch(async err => {
+      // fetch failed, so save in indexed db
+      console.log(err, "Im here in catch");
+      await saveRecord(transaction);
+
       // clear form
       nameEl.value = "";
       amountEl.value = "";
-    }
-  })
-  .catch(async err => {
-    // fetch failed, so save in indexed db
-    console.log(err, "Im here in catch");
-    await saveRecord(transaction);
-
-    // clear form
-    nameEl.value = "";
-    amountEl.value = "";
-  });
+    });
 }
 
-document.querySelector("#add-btn").onclick = function() {
+document.querySelector("#add-btn").onclick = function () {
   sendTransaction(true);
 };
 
-document.querySelector("#sub-btn").onclick = function() {
+document.querySelector("#sub-btn").onclick = function () {
   sendTransaction(false);
 };
 
@@ -172,35 +178,73 @@ async function saveRecord(transaction) {
       tx,
       store;
 
-    request.onupgradeneeded = function(e) {
+    request.onupgradeneeded = function (e) {
       const db = request.result;
-      db.createObjectStore(storeName, {autoIncrement: true});
+      db.createObjectStore(storeName, { autoIncrement: true });
     };
 
-    request.onerror = function(e) {
+    request.onerror = function (e) {
       console.log("There was an error");
     };
 
-    request.onsuccess = function(e) {
+    request.onsuccess = function (e) {
       db = request.result;
       tx = db.transaction(storeName, "readwrite");
       store = tx.objectStore(storeName);
       console.log(store);
 
-      db.onerror = function(e) {
+      db.onerror = function (e) {
         console.log("error");
       };
 
       if (method === "POST") {
         store.put(object);
-      } 
-
-      tx.oncomplete = function() {
+      }
+      tx.oncomplete = function () {
         db.close();
       };
     };
+
+    // sendRecord(transaction);
   });
-}
+
+};
+
+async function getRecord() {
+
+var getIDB = window.indexedDB.open("offlineBudget", 1);
+console.log(getIDB);
+
+getIDB.onsuccess = function(e) {
+  var tx = getIDB.result.transaction("BudgetStorage", "readwrite");
+  var store = tx.objectStore("BudgetStorage");
+  console.log("store is " + store);
+
+  const all = store.getAll();
+  all.onsuccess = function() {
+    console.log(all.result);
+   var allVals = all.result;
+   console.log(allVals);
+    
+     fetch("/api/transaction", {
+      method: "POST",
+      body: JSON.stringify(allVals),
+      headers: {
+        Accept: "application/json, text/plain, */*",
+        "Content-Type": "application/json"
+      }
+    })
+    .then(store.clear());
+  }
+
+  }
+  
+};
+
+
+
+
+  
 
 
 

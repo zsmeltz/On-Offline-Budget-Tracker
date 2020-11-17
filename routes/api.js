@@ -31,4 +31,8 @@ router.get("/api/transaction", (req, res) => {
     });
 });
 
+router.get("/api/ping", (req, res) => {
+  res.status(200);
+})
+
 module.exports = router;
