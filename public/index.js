@@ -1,7 +1,8 @@
 // const { on } = require("../models/transaction");
 var transactions = [];
+var transName = getElementById("#t-name");
+var transAmount = getElementById("#t-amount");
 let myChart;
-
 let online = false;
 
 
@@ -153,10 +154,15 @@ function sendTransaction(isAdding) {
 
 document.querySelector("#add-btn").onclick = function () {
   sendTransaction(true);
+  transName = "";
+  transAmount = 0;
+
 };
 
 document.querySelector("#sub-btn").onclick = function () {
   sendTransaction(false);
+  transName = "";
+  transAmount = 0;
 };
 
 
@@ -205,7 +211,7 @@ async function saveRecord(transaction) {
       };
     };
 
-    // sendRecord(transaction);
+    
   });
 
 };
@@ -240,55 +246,3 @@ getIDB.onsuccess = function(e) {
   }
   
 };
-
-
-
-
-  
-
-
-
-//  function saveRecord(transaction) {
-//   console.log("made it into saveRecord");
-
-//   return new Promise((resolve, reject) => {
-//     const request = window.indexedDB.open(transaction, 1);
-//     let db,
-//       tx,
-//       store;
-
-//     request.onupgradeneeded = function(e) {
-//       const db = request.result;
-//       db.createObjectStore("CoolStore", { keyPath: "_id" });
-//     };
-
-//     request.onerror = function(e) {
-//       console.log("There was an error");
-//     };
-
-//     request.onsuccess = function(e) {
-//       db = request.result;
-//       tx = db.transaction("CoolStore", "readwrite");
-//       store = tx.objectStore("CoolStore");
-
-//       db.onerror = function(e) {
-//         console.log("error");
-//       };
-//       if (method === "put") {
-//         store.put(object);
-//       }
-//       if (method === "clear") {
-//         store.clear();
-//       }
-//       if (method === "get") {
-//         const all = store.getAll();
-//         all.onsuccess = function() {
-//           resolve(all.result);
-//         };
-//       }
-//       tx.oncomplete = function() {
-//         db.close();
-//       };
-//     };
-//   });
-// }
