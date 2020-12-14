@@ -1,20 +1,18 @@
 // const { on } = require("../models/transaction");
 var transactions = [];
-var transName = getElementById("#t-name");
-var transAmount = getElementById("#t-amount");
+var transName = getElementById("t-name");
+var transAmount = getElementById("t-amount");
 let myChart;
 let online = false;
 
-
-
 fetch("/api/transaction")
-  .then(response => {
+  .then((response) => {
     return response.json();
   })
-  .then(data => {
+  .then((data) => {
     // save db data on global variable
     transactions = data;
-    
+
     getRecord();
     populateTotal();
     populateTable();
@@ -35,7 +33,7 @@ function populateTable() {
   let tbody = document.querySelector("#tbody");
   tbody.innerHTML = "";
 
-  transactions.forEach(transaction => {
+  transactions.forEach((transaction) => {
     // create and populate a table row
     let tr = document.createElement("tr");
     tr.innerHTML = `
@@ -53,13 +51,13 @@ function populateChart() {
   let sum = 0;
 
   // create date labels for chart
-  let labels = reversed.map(t => {
+  let labels = reversed.map((t) => {
     let date = new Date(t.date);
     return `${date.getMonth() + 1}/${date.getDate()}/${date.getFullYear()}`;
   });
 
   // create incremental values for chart
-  let data = reversed.map(t => {
+  let data = reversed.map((t) => {
     sum += parseInt(t.value);
     return sum;
   });
@@ -72,16 +70,18 @@ function populateChart() {
   let ctx = document.getElementById("myChart").getContext("2d");
 
   myChart = new Chart(ctx, {
-    type: 'line',
+    type: "line",
     data: {
       labels,
-      datasets: [{
-        label: "Total Over Time",
-        fill: true,
-        backgroundColor: "#6666ff",
-        data
-      }]
-    }
+      datasets: [
+        {
+          label: "Total Over Time",
+          fill: true,
+          backgroundColor: "#6666ff",
+          data,
+        },
+      ],
+    },
   });
 }
 
@@ -94,8 +94,7 @@ function sendTransaction(isAdding) {
   if (nameEl.value === "" || amountEl.value === "") {
     errorEl.textContent = "Missing Information";
     return;
-  }
-  else {
+  } else {
     errorEl.textContent = "";
   }
 
@@ -103,7 +102,7 @@ function sendTransaction(isAdding) {
   let transaction = {
     name: nameEl.value,
     value: amountEl.value,
-    date: new Date().toISOString()
+    date: new Date().toISOString(),
   };
 
   // if subtracting funds, convert amount to negative number
@@ -125,23 +124,22 @@ function sendTransaction(isAdding) {
     body: JSON.stringify(transaction),
     headers: {
       Accept: "application/json, text/plain, */*",
-      "Content-Type": "application/json"
-    }
+      "Content-Type": "application/json",
+    },
   })
-    .then(response => {
+    .then((response) => {
       return response.json();
     })
-    .then(data => {
+    .then((data) => {
       if (data.errors) {
         errorEl.textContent = "Missing Information";
-      }
-      else {
+      } else {
         // clear form
         nameEl.value = "";
         amountEl.value = "";
       }
     })
-    .catch(async err => {
+    .catch(async (err) => {
       // fetch failed, so save in indexed db
       console.log(err, "Im here in catch");
       await saveRecord(transaction);
@@ -156,7 +154,6 @@ document.querySelector("#add-btn").onclick = function () {
   sendTransaction(true);
   transName = "";
   transAmount = 0;
-
 };
 
 document.querySelector("#sub-btn").onclick = function () {
@@ -164,7 +161,6 @@ document.querySelector("#sub-btn").onclick = function () {
   transName = "";
   transAmount = 0;
 };
-
 
 async function saveRecord(transaction) {
   console.log("Im here in saveRecord!");
@@ -180,9 +176,7 @@ async function saveRecord(transaction) {
     let method = "POST";
 
     const request = window.indexedDB.open(databaseName, 1);
-    let db,
-      tx,
-      store;
+    let db, tx, store;
 
     request.onupgradeneeded = function (e) {
       const db = request.result;
@@ -210,39 +204,32 @@ async function saveRecord(transaction) {
         db.close();
       };
     };
-
-    
   });
-
-};
+}
 
 async function getRecord() {
+  var getIDB = window.indexedDB.open("offlineBudget", 1);
+  console.log(getIDB);
 
-var getIDB = window.indexedDB.open("offlineBudget", 1);
-console.log(getIDB);
+  getIDB.onsuccess = function (e) {
+    var tx = getIDB.result.transaction("BudgetStorage", "readwrite");
+    var store = tx.objectStore("BudgetStorage");
+    console.log("store is " + store);
 
-getIDB.onsuccess = function(e) {
-  var tx = getIDB.result.transaction("BudgetStorage", "readwrite");
-  var store = tx.objectStore("BudgetStorage");
-  console.log("store is " + store);
+    const all = store.getAll();
+    all.onsuccess = function () {
+      console.log(all.result);
+      var allVals = all.result;
+      console.log(allVals);
 
-  const all = store.getAll();
-  all.onsuccess = function() {
-    console.log(all.result);
-   var allVals = all.result;
-   console.log(allVals);
-    
-     fetch("/api/transaction", {
-      method: "POST",
-      body: JSON.stringify(allVals),
-      headers: {
-        Accept: "application/json, text/plain, */*",
-        "Content-Type": "application/json"
-      }
-    })
-    .then(store.clear());
-  }
-
-  }
-  
-};
+      fetch("/api/transaction", {
+        method: "POST",
+        body: JSON.stringify(allVals),
+        headers: {
+          Accept: "application/json, text/plain, */*",
+          "Content-Type": "application/json",
+        },
+      }).then(store.clear());
+    };
+  };
+}
